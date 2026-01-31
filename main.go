@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cv-landing-cli/pkg/model"
+	"cv-landing-cli/pkg/model/action"
 	"fmt"
 	"os"
 
@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	p := tea.NewProgram(model.NewActionModel())
+	p := tea.NewProgram(action.NewModel())
 	if _, err := p.Run(); err != nil {
 		fmt.Println("There's an error:", err)
 		os.Exit(1)
