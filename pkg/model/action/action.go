@@ -1,7 +1,6 @@
 package action
 
 import (
-	"cv-landing-cli/pkg/model"
 	"cv-landing-cli/pkg/model/form"
 	"strings"
 
@@ -9,8 +8,8 @@ import (
 )
 
 type MenuEntry struct {
-	Name  string
-	Model tea.Model
+	Name     string
+	NewModel func() tea.Model
 }
 
 type ActionModel struct {
@@ -19,25 +18,27 @@ type ActionModel struct {
 }
 
 func NewModel() ActionModel {
-	activity := model.Activity{}
 	model := ActionModel{
 		cursor: 0,
 	}
 	model.entries = []MenuEntry{
 		{
 			Name: "Add items",
-			Model: form.NewModel([]form.Field{
-				{
-					Label:  "Name",
-					Value:  &activity.Name,
-					Height: 1,
-				},
-				{
-					Label:  "Description",
-					Value:  &activity.Description,
-					Height: 5,
-				},
-			}, activity, &model),
+			NewModel: func() tea.Model {
+				addItemsModel := form.NewModel([]form.FormField{
+					form.NewTextField(1),
+					form.NewTextField(1),
+					form.NewTextField(3),
+					form.NewTextField(1),
+				}, []string{
+					"Name",
+					"Subtitle",
+					"Description",
+					"Meta Label",
+				}, &model)
+				addItemsModel.Fields[0].SetFocus(true)
+				return addItemsModel
+			},
 		},
 		{
 			Name: "Remove items",
@@ -64,8 +65,8 @@ func (m ActionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 			entry := m.entries[m.cursor]
-			if entry.Model != nil {
-				return entry.Model, nil
+			if entry.NewModel != nil {
+				return entry.NewModel(), nil
 			}
 		case "q":
 			return m, tea.Quit

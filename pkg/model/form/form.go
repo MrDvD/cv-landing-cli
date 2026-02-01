@@ -1,18 +1,16 @@
 package form
 
 import (
-	"cv-landing-cli/pkg/view"
 	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type Field struct {
-	Label  string
-	Key    string
-	Value  *string
-	Height int
+type FormField interface {
+	tea.Model
+	SetFocus(bool)
+	IsFocused() bool
 }
 
 type Cursor struct {
@@ -21,18 +19,17 @@ type Cursor struct {
 }
 
 type FormModel struct {
-	fields        []Field
-	cursor        Cursor
+	Fields        []FormField
+	labels        []string
+	cursor        int
 	previousModel tea.Model
 }
 
-func NewModel(fields []Field, result any, previousModel tea.Model) FormModel {
+func NewModel(Fields []FormField, labels []string, previousModel tea.Model) FormModel {
 	return FormModel{
-		fields: fields,
-		cursor: Cursor{
-			row:    0,
-			column: 0,
-		},
+		Fields:        Fields,
+		labels:        labels,
+		cursor:        0,
 		previousModel: previousModel,
 	}
 }
@@ -42,122 +39,47 @@ func (m FormModel) Init() tea.Cmd {
 }
 
 func (m FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	m.Fields[m.cursor].SetFocus(false)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
 			return m.previousModel, nil
-		case tea.KeyLeft:
-			if m.cursor.column > 0 {
-				m.cursor.column--
-			}
-		case tea.KeyRight:
-			n := m.currentLen()
-			if n != nil && m.cursor.column < *n {
-				m.cursor.column++
-			}
-		case tea.KeyCtrlUp:
-			m.cursor.row = 0
-		case tea.KeyCtrlDown:
-			m.cursor.row = len(m.fields) - 1
-		case tea.KeyCtrlLeft:
-			m.cursor.column = 0
-		case tea.KeyCtrlRight:
-			n := m.currentLen()
-			if n != nil {
-				m.cursor.column = *n
-			}
 		case tea.KeyUp:
-			if m.cursor.row > 0 {
-				m.cursor.row--
-				n := m.currentLen()
-				if n != nil {
-					m.cursor.column = *n
-				}
+			if m.cursor > 0 {
+				m.cursor--
 			}
 		case tea.KeyDown, tea.KeyEnter:
-			if m.cursor.row < len(m.fields)-1 {
-				m.cursor.row++
-				n := m.currentLen()
-				if n != nil {
-					m.cursor.column = *n
-				}
+			if m.cursor < len(m.Fields)-1 {
+				m.cursor++
 			}
-		case tea.KeyBackspace:
-			m.handleBackspace()
-		case tea.KeyDelete:
-			m.handleDelete()
-		case tea.KeyRunes, tea.KeySpace:
-			m.handleInput(msg.String())
+		case tea.KeyCtrlUp:
+			m.cursor = 0
+		case tea.KeyCtrlDown:
+			m.cursor = len(m.Fields) - 1
 		}
 	}
-	return m, nil
-}
-
-func (m *FormModel) currentVal() *string {
-	return m.fields[m.cursor.row].Value
-}
-
-func (m *FormModel) currentLen() *int {
-	v := m.currentVal()
-	if v == nil {
-		return nil
+	updatedModel, cmd := m.Fields[m.cursor].Update(msg)
+	if assertedModel, ok := updatedModel.(FormField); ok {
+		m.Fields[m.cursor] = assertedModel
 	}
-	n := len([]rune(*v))
-	return &n
-}
-
-func (m *FormModel) handleInput(input string) {
-	v := m.currentVal()
-	if v == nil {
-		return
-	}
-	runes := []rune(*v)
-	newRunes := append(runes[:m.cursor.column], []rune(input)...)
-	newRunes = append(newRunes, runes[m.cursor.column:]...)
-	*v = string(newRunes)
-	m.cursor.column += len([]rune(input))
-}
-
-func (m *FormModel) handleBackspace() {
-	v := m.currentVal()
-	if m.cursor.column == 0 || v == nil {
-		return
-	}
-	runes := []rune(*v)
-	*v = string(append(runes[:m.cursor.column-1], runes[m.cursor.column:]...))
-	m.cursor.column--
-}
-
-func (m *FormModel) handleDelete() {
-	v := m.currentVal()
-	if v == nil {
-		return
-	}
-	runes := []rune(*v)
-	if m.cursor.column >= len(runes) {
-		return
-	}
-	*v = string(append(runes[:m.cursor.column], runes[m.cursor.column+1:]...))
+	m.Fields[m.cursor].SetFocus(true)
+	return m, cmd
 }
 
 func (m FormModel) View() string {
 	var sb strings.Builder
 
 	maxLen := m.getMaxLabelLen()
-	for i, field := range m.fields {
-		var selectedCol int
-		if i == m.cursor.row {
-			selectedCol = m.cursor.column
-		} else {
-			selectedCol = len([]rune(*field.Value))
-		}
-		rendered := view.Textfield(*field.Value, selectedCol, i == m.cursor.row, 35, field.Height)
+	for i, field := range m.Fields {
+		rendered := field.View()
 		lines := strings.Split(rendered, "\n")
 
 		for j, line := range lines {
 			if j == 0 {
-				fmt.Fprintf(&sb, "%*s %s\n", maxLen, field.Label, line)
+				fmt.Fprintf(&sb, "%*s %s\n", maxLen, m.labels[i], line)
 			} else {
 				indent := strings.Repeat(" ", maxLen+1)
 				fmt.Fprintf(&sb, "%s%s\n", indent, line)
@@ -171,8 +93,8 @@ func (m FormModel) View() string {
 
 func (m FormModel) getMaxLabelLen() int {
 	maxLen := 0
-	for _, field := range m.fields {
-		labelLen := len([]rune(field.Label))
+	for _, label := range m.labels {
+		labelLen := len([]rune(label))
 		if labelLen > maxLen {
 			maxLen = labelLen
 		}

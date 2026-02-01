@@ -31,17 +31,14 @@ func Textfield(content string, cursor int, isFocused bool, width, height int) st
 		line := color.StyledLine{}
 		line.Segments = append(line.Segments, color.Segment{Text: sideBorder})
 
-		// Calculate the "logical" row we are rendering based on scroll
 		logicalRow := r + scrollOffset
 
 		for c := range innerWidth {
-			// Calculate the 1D index in the rune slice
 			realIndex := (logicalRow * innerWidth) + c
 
 			attrs := []color.Attribute{}
 			char := " "
 
-			// Determine character content
 			if realIndex < len(runes) {
 				char = string(runes[realIndex])
 				if isPlaceholder {
