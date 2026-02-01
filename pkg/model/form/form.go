@@ -51,7 +51,7 @@ func (m FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor > 0 {
 				m.cursor--
 			}
-		case tea.KeyDown, tea.KeyEnter:
+		case tea.KeyDown:
 			if m.cursor < len(m.Fields)-1 {
 				m.cursor++
 			}
