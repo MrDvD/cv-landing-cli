@@ -31,12 +31,16 @@ func NewModel() ActionModel {
 					form.NewTextField(3),
 					form.NewSelectField([]string{"project", "education", "event"}, 0),
 					form.NewTextField(1),
+					form.NewDateField(),
+					form.NewDateField(),
 				}, []string{
 					"Name",
 					"Subtitle",
 					"Description",
 					"Type",
-					"Meta Label",
+					"Meta label",
+					"Date start",
+					"Date end",
 				}, &model)
 				addItemsModel.Fields[0].SetFocus(true)
 				return addItemsModel
