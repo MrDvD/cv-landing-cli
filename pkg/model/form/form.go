@@ -87,7 +87,7 @@ func (m FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.handleBackspace()
 		case tea.KeyDelete:
 			m.handleDelete()
-		case tea.KeyRunes:
+		case tea.KeyRunes, tea.KeySpace:
 			m.handleInput(msg.String())
 		}
 	}
@@ -144,6 +144,32 @@ func (m *FormModel) handleDelete() {
 func (m FormModel) View() string {
 	var sb strings.Builder
 
+	maxLen := m.getMaxLabelLen()
+	for i, field := range m.fields {
+		var selectedCol int
+		if i == m.cursor.row {
+			selectedCol = m.cursor.column
+		} else {
+			selectedCol = len([]rune(*field.Value))
+		}
+		rendered := view.Textfield(*field.Value, selectedCol, i == m.cursor.row, 35, field.Height)
+		lines := strings.Split(rendered, "\n")
+
+		for j, line := range lines {
+			if j == 0 {
+				fmt.Fprintf(&sb, "%*s %s\n", maxLen, field.Label, line)
+			} else {
+				indent := strings.Repeat(" ", maxLen+1)
+				fmt.Fprintf(&sb, "%s%s\n", indent, line)
+			}
+		}
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
+}
+
+func (m FormModel) getMaxLabelLen() int {
 	maxLen := 0
 	for _, field := range m.fields {
 		labelLen := len([]rune(field.Label))
@@ -151,13 +177,5 @@ func (m FormModel) View() string {
 			maxLen = labelLen
 		}
 	}
-
-	for i, field := range m.fields {
-		isFocused := (i == m.cursor.row)
-		val := m.fields[i].Value
-		rendered := view.Textfield(*val, m.cursor.column, isFocused)
-		fmt.Fprintf(&sb, "%-*s : %s\n", maxLen, field.Label, rendered)
-	}
-
-	return sb.String()
+	return maxLen
 }

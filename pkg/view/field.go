@@ -1,47 +1,70 @@
 package view
 
-import "cv-landing-cli/pkg/tool/color"
+import (
+	"cv-landing-cli/pkg/tool/color"
+	"strings"
+)
 
-func Textfield(content string, cursor int, isFocused bool) string {
+func Textfield(content string, cursor int, isFocused bool, width, height int) string {
+	innerWidth := max(width-2, 0)
 	val := content
 	isPlaceholder := false
 	if val == "" {
-		val = "type there..."
+		val = "type here..."
 		isPlaceholder = true
 	}
 	runes := []rune(val)
 
-	line := color.StyledLine{}
-
-	for i := range runes {
-		attrs := []color.Attribute{}
-
-		if isPlaceholder {
-			attrs = append(attrs, color.AttrGray)
-		}
-
-		if isFocused && i == cursor {
-			attrs = append(attrs, color.AttrInvert)
-		}
-
-		line.Segments = append(line.Segments, color.Segment{
-			Text:       string(runes[i]),
-			Attributes: attrs,
-		})
+	cursorRow := 0
+	if innerWidth > 0 {
+		cursorRow = cursor / innerWidth
+	}
+	scrollOffset := 0
+	if cursorRow >= height {
+		scrollOffset = cursorRow - height + 1
 	}
 
-	if isFocused && cursor >= len(runes) {
-		attrs := []color.Attribute{}
-		if isPlaceholder {
-			attrs = append(attrs, color.AttrGray)
-		}
-		attrs = append(attrs, color.AttrInvert)
+	var output strings.Builder
+	sideBorder := "│"
 
-		line.Segments = append(line.Segments, color.Segment{
-			Text:       " ",
-			Attributes: attrs,
-		})
+	for r := range height {
+		line := color.StyledLine{}
+		line.Segments = append(line.Segments, color.Segment{Text: sideBorder})
+
+		// Calculate the "logical" row we are rendering based on scroll
+		logicalRow := r + scrollOffset
+
+		for c := range innerWidth {
+			// Calculate the 1D index in the rune slice
+			realIndex := (logicalRow * innerWidth) + c
+
+			attrs := []color.Attribute{}
+			char := " "
+
+			// Determine character content
+			if realIndex < len(runes) {
+				char = string(runes[realIndex])
+				if isPlaceholder {
+					attrs = append(attrs, color.AttrGray)
+				}
+			}
+			if isFocused && realIndex == cursor {
+				attrs = append(attrs, color.AttrInvert)
+			}
+
+			line.Segments = append(line.Segments, color.Segment{
+				Text:       char,
+				Attributes: attrs,
+			})
+		}
+
+		line.Segments = append(line.Segments, color.Segment{Text: sideBorder})
+
+		if r > 0 {
+			output.WriteString("\n")
+		}
+		output.WriteString(line.Render())
 	}
 
-	return line.Render()
+	return output.String()
 }
