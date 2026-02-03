@@ -39,8 +39,8 @@ func NewModel() ActionModel {
 					"Description",
 					"Type",
 					"Meta label",
-					"Date start",
-					"Date end",
+					"Start date",
+					"End date",
 				}, &model)
 				addItemsModel.Fields[0].SetFocus(true)
 				return addItemsModel
