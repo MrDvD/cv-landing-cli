@@ -11,7 +11,7 @@ func InitCmd(repo activity.ActivityRepository) *cobra.Command {
 		Use:   "show",
 		Short: "Show items from DB",
 	}
-	cmd.AddCommand(ActivityCmd())
+	cmd.AddCommand(ActivityCmd(repo))
 	cmd.AddCommand(TagCmd())
 	cmd.AddCommand(AttachmentCmd())
 	return &cmd

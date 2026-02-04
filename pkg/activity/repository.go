@@ -2,6 +2,7 @@ package activity
 
 import (
 	"bytes"
+	"cv-landing-cli/pkg/client"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,26 +11,15 @@ import (
 )
 
 type ActivityClient struct {
-	Client  *http.Client
-	ApiLink string
-}
-
-func (h *ActivityClient) GetAll() ([]Activity, error) {
-	return h.getGeneric(nil)
+	Base *client.BaseClient
 }
 
 func (h *ActivityClient) GetAllOfType(activityType string) ([]Activity, error) {
-	return h.getGeneric(&activityType)
-}
-
-func (h *ActivityClient) getGeneric(activityType *string) ([]Activity, error) {
-	var apiLink string
-	if activityType == nil {
-		apiLink = h.ApiLink
-	} else {
-		apiLink = fmt.Sprintf("%s%s", h.ApiLink, *activityType)
+	apiLink, err := h.Base.Resolve("activity_read", fmt.Sprintf("activity/%s/", activityType))
+	if err != nil {
+		return []Activity{}, err
 	}
-	resp, err := h.Client.Get(apiLink)
+	resp, err := h.Base.HTTPClient.Get(apiLink)
 	if err != nil {
 		return []Activity{}, err
 	}
@@ -56,7 +46,11 @@ func (h *ActivityClient) Add(item Activity) (Activity, error) {
 		return Activity{}, err
 	}
 	reader := bytes.NewReader(result)
-	resp, err := h.Client.Post(h.ApiLink, "application/json", reader)
+	apiLink, err := h.Base.Resolve("activity_write", "activity/")
+	if err != nil {
+		return Activity{}, err
+	}
+	resp, err := h.Base.HTTPClient.Post(apiLink, "application/json", reader)
 	if err != nil {
 		return Activity{}, err
 	}

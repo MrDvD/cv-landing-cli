@@ -4,6 +4,7 @@ import (
 	"cv-landing-cli/cmd/add"
 	"cv-landing-cli/cmd/show"
 	"cv-landing-cli/pkg/activity"
+	"cv-landing-cli/pkg/client"
 	"cv-landing-cli/pkg/config"
 	"cv-landing-cli/pkg/model/action"
 	"net/http"
@@ -21,8 +22,10 @@ var rootCmd = &cobra.Command{
 	},
 }
 var activityClient = activity.ActivityClient{
-	Client:  http.DefaultClient,
-	ApiLink: config.MustGetAppConfig().ActivityApiBase,
+	Base: &client.BaseClient{
+		HTTPClient: http.DefaultClient,
+		Endpoints:  config.MustGetAppConfig().Hosts,
+	},
 }
 
 func Execute() {

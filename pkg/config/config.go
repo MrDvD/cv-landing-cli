@@ -7,9 +7,7 @@ import (
 )
 
 type AppConfig struct {
-	ActivityApiBase    string `json:"activityApiBase"`
-	TagsApiBase        string `json:"tagsApiBase"`
-	AttachmentsApiBase string `json:"attachmentApiBase"`
+	Hosts map[string]string `json:"hosts"`
 }
 
 func MustGetAppConfig() AppConfig {
