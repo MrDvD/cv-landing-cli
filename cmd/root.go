@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"cv-landing-cli/cmd/add"
+	"cv-landing-cli/cmd/remove"
 	"cv-landing-cli/cmd/show"
 	"cv-landing-cli/pkg/activity"
 	"cv-landing-cli/pkg/client"
@@ -32,6 +33,7 @@ func Execute() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(add.InitCmd(&activityClient))
 	rootCmd.AddCommand(show.InitCmd(&activityClient))
+	rootCmd.AddCommand(remove.InitCmd(&activityClient))
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

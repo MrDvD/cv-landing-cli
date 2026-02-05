@@ -2,6 +2,7 @@ package tags
 
 import (
 	"bytes"
+	"cv-landing-cli/pkg/client"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,12 +12,15 @@ import (
 )
 
 type TagsClient struct {
-	Client  *http.Client
-	ApiLink string
+	Base *client.BaseClient
 }
 
 func (h *TagsClient) Get(filter TagFilter) ([]Tag, error) {
-	resp, err := h.Client.Get(h.buildGetQuery(filter))
+	apiLink, err := h.buildGetQuery(filter)
+	if err != nil {
+		return []Tag{}, err
+	}
+	resp, err := h.Base.HTTPClient.Get(apiLink)
 	if err != nil {
 		return []Tag{}, err
 	}
@@ -37,9 +41,13 @@ func (h *TagsClient) Get(filter TagFilter) ([]Tag, error) {
 	return tags, nil
 }
 
-func (h *TagsClient) buildGetQuery(filter TagFilter) string {
+func (h *TagsClient) buildGetQuery(filter TagFilter) (string, error) {
 	var query strings.Builder
-	query.WriteString(h.ApiLink)
+	apiLink, err := h.Base.Resolve("tags_read", "tags/")
+	if err != nil {
+		return "", err
+	}
+	query.WriteString(apiLink)
 	if filter.ActivityID == nil {
 		if filter.TagType != nil {
 			fmt.Fprintf(&query, "%s/", *filter.TagType)
@@ -51,7 +59,7 @@ func (h *TagsClient) buildGetQuery(filter TagFilter) string {
 			fmt.Fprintf(&query, "%d/%s/", *filter.ActivityID, *filter.TagType)
 		}
 	}
-	return query.String()
+	return query.String(), nil
 }
 
 func (h *TagsClient) Add(item Tag) (Tag, error) {
@@ -59,8 +67,11 @@ func (h *TagsClient) Add(item Tag) (Tag, error) {
 	if err != nil {
 		return Tag{}, err
 	}
-	reader := bytes.NewReader(result)
-	resp, err := h.Client.Post(h.ApiLink, "application/json", reader)
+	apiLink, err := h.Base.Resolve("tags_write", "activity/")
+	if err != nil {
+		return Tag{}, err
+	}
+	resp, err := h.Base.HTTPClient.Post(apiLink, "application/json", bytes.NewReader(result))
 	if err != nil {
 		return Tag{}, err
 	}
@@ -79,4 +90,23 @@ func (h *TagsClient) Add(item Tag) (Tag, error) {
 		return Tag{}, err
 	}
 	return insertedTag, nil
+}
+
+func (h *TagsClient) Remove(id int) error {
+	apiLink, err := h.Base.Resolve("tags_remove", fmt.Sprintf("tags/%d/", id))
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", apiLink, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := h.Base.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.New("http is not ok")
+	}
+	return nil
 }

@@ -45,12 +45,11 @@ func (h *ActivityClient) Add(item Activity) (Activity, error) {
 	if err != nil {
 		return Activity{}, err
 	}
-	reader := bytes.NewReader(result)
 	apiLink, err := h.Base.Resolve("activity_write", "activity/")
 	if err != nil {
 		return Activity{}, err
 	}
-	resp, err := h.Base.HTTPClient.Post(apiLink, "application/json", reader)
+	resp, err := h.Base.HTTPClient.Post(apiLink, "application/json", bytes.NewReader(result))
 	if err != nil {
 		return Activity{}, err
 	}
@@ -69,4 +68,23 @@ func (h *ActivityClient) Add(item Activity) (Activity, error) {
 		return Activity{}, err
 	}
 	return insertedActivity, nil
+}
+
+func (h *ActivityClient) Remove(id int) error {
+	apiLink, err := h.Base.Resolve("activity_remove", fmt.Sprintf("activity/%d/", id))
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", apiLink, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := h.Base.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.New("http is not ok")
+	}
+	return nil
 }

@@ -2,6 +2,7 @@ package attachments
 
 import (
 	"bytes"
+	"cv-landing-cli/pkg/client"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,12 +11,15 @@ import (
 )
 
 type AttachmentClient struct {
-	Client  *http.Client
-	ApiLink string
+	Base *client.BaseClient
 }
 
 func (h *AttachmentClient) Get(activityId int) ([]Attachment, error) {
-	resp, err := h.Client.Get(fmt.Sprintf("%s%d/", h.ApiLink, activityId))
+	apiLink, err := h.Base.Resolve("attachments_read", fmt.Sprintf("attachments/%d/", activityId))
+	if err != nil {
+		return []Attachment{}, err
+	}
+	resp, err := h.Base.HTTPClient.Get(apiLink)
 	if err != nil {
 		return []Attachment{}, err
 	}
@@ -41,8 +45,11 @@ func (h *AttachmentClient) Add(item Attachment) (Attachment, error) {
 	if err != nil {
 		return Attachment{}, err
 	}
-	reader := bytes.NewReader(result)
-	resp, err := h.Client.Post(h.ApiLink, "application/json", reader)
+	apiLink, err := h.Base.Resolve("attachments_write", "attachments/")
+	if err != nil {
+		return Attachment{}, err
+	}
+	resp, err := h.Base.HTTPClient.Post(apiLink, "application/json", bytes.NewReader(result))
 	if err != nil {
 		return Attachment{}, err
 	}
@@ -61,4 +68,23 @@ func (h *AttachmentClient) Add(item Attachment) (Attachment, error) {
 		return Attachment{}, err
 	}
 	return insertedAttachment, nil
+}
+
+func (h *AttachmentClient) Remove(id int) error {
+	apiLink, err := h.Base.Resolve("attachments_remove", fmt.Sprintf("attachments/%d/", id))
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", apiLink, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := h.Base.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return errors.New("http is not ok")
+	}
+	return nil
 }
