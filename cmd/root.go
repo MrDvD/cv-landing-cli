@@ -16,12 +16,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
-		p := tea.NewProgram(action.NewModel())
-		_, err := p.Run()
-		return err
-	},
+var rootCmd = cobra.Command{
+	Use:   "cv-admin",
+	Short: "admin tool for cv management",
+	Long: `The administrative companion to the CV Landing CLI.
+		
+CV Admin allows you to manage your professional identity directly 
+from the terminal, providing interactive forms for data entry and 
+automated formatting for your deployment-ready CV.`,
 }
 var activityClient = activity.ActivityClient{
 	Base: &client.BaseClient{
@@ -30,12 +32,28 @@ var activityClient = activity.ActivityClient{
 	},
 }
 
+func fillModes(cmd cobra.Command) (cobra.Command, *bool) {
+	interactive := new(bool)
+	cmd.Flags().BoolVarP(interactive, "interactive", "i", false, "enable interactive mode")
+	return cmd, interactive
+}
+
 func Execute() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(add.InitCmd(&activityClient))
 	rootCmd.AddCommand(show.InitCmd(&activityClient))
 	rootCmd.AddCommand(remove.InitCmd(&activityClient))
 	rootCmd.AddCommand(edit.InitCmd(&activityClient))
+	rootCmd, interactive := fillModes(rootCmd)
+	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if *interactive {
+			p := tea.NewProgram(action.NewModel())
+			_, err := p.Run()
+			return err
+		} else {
+			return rootCmd.Help()
+		}
+	}
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
