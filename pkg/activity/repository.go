@@ -53,11 +53,11 @@ func (h *ActivityClient) Add(item Activity) (Activity, error) {
 	if err != nil {
 		return Activity{}, err
 	}
-	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusCreated {
 		return Activity{}, errors.New("http is not ok")
 	}
+	defer resp.Body.Close()
+
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return Activity{}, err
@@ -86,5 +86,40 @@ func (h *ActivityClient) Remove(id int) error {
 	if resp.StatusCode != http.StatusNoContent {
 		return errors.New("http is not ok")
 	}
+	defer resp.Body.Close()
+
 	return nil
+}
+
+func (h *ActivityClient) Edit(id int, ops []EditField) (Activity, error) {
+	apiLink, err := h.Base.Resolve("activity_edit", fmt.Sprintf("activity/%d/", id))
+	if err != nil {
+		return Activity{}, err
+	}
+	bodyBytes, err := json.Marshal(ops)
+	if err != nil {
+		return Activity{}, err
+	}
+	req, err := http.NewRequest("PATCH", apiLink, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return Activity{}, err
+	}
+	resp, err := h.Base.HTTPClient.Do(req)
+	if err != nil {
+		return Activity{}, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return Activity{}, errors.New("http is not ok")
+	}
+
+	bodyBytes, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return Activity{}, err
+	}
+	var patchedActivity Activity
+	err = json.Unmarshal(bodyBytes, &patchedActivity)
+	if err != nil {
+		return Activity{}, err
+	}
+	return patchedActivity, nil
 }

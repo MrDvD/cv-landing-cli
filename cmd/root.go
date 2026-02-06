@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"cv-landing-cli/cmd/add"
+	"cv-landing-cli/cmd/edit"
 	"cv-landing-cli/cmd/remove"
 	"cv-landing-cli/cmd/show"
 	"cv-landing-cli/pkg/activity"
@@ -34,6 +35,7 @@ func Execute() {
 	rootCmd.AddCommand(add.InitCmd(&activityClient))
 	rootCmd.AddCommand(show.InitCmd(&activityClient))
 	rootCmd.AddCommand(remove.InitCmd(&activityClient))
+	rootCmd.AddCommand(edit.InitCmd(&activityClient))
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
