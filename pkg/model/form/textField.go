@@ -9,6 +9,7 @@ import (
 type TextField struct {
 	value   *string
 	height  int
+	width   int
 	column  int
 	focused bool
 }
@@ -17,6 +18,7 @@ func NewTextField(height int) *TextField {
 	return &TextField{
 		value:   new(string),
 		height:  height,
+		width:   0,
 		column:  0,
 		focused: false,
 	}
@@ -98,7 +100,7 @@ func (m *TextField) handleDelete() {
 }
 
 func (m TextField) View() string {
-	return view.Textfield(*m.value, m.column, m.focused, 40, m.height)
+	return view.Textfield(*m.value, m.column, m.focused, m.width, m.height)
 }
 
 func (m *TextField) currentLen() *int {
@@ -107,4 +109,16 @@ func (m *TextField) currentLen() *int {
 	}
 	n := len([]rune(*m.value))
 	return &n
+}
+
+func (m *TextField) SetWidth(value int) {
+	m.width = value
+}
+
+func (m TextField) GetWidth() int {
+	return m.width
+}
+
+func (m TextField) GetHeight() int {
+	return m.height
 }

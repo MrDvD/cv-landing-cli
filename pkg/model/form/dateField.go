@@ -41,3 +41,7 @@ func (m *DateField) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m DateField) View() string {
 	return view.Date(m.digits, m.focused)
 }
+
+func (m DateField) GetHeight() int {
+	return 1
+}

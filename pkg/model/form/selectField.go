@@ -57,3 +57,7 @@ func (m *SelectField) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m SelectField) View() string {
 	return view.Select(m.options, m.cursor, *m.selected, m.focused)
 }
+
+func (m SelectField) GetHeight() int {
+	return len(m.options)
+}
