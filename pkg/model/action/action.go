@@ -2,6 +2,8 @@ package action
 
 import (
 	"cv-landing-cli/pkg/model/form"
+	"cv-landing-cli/pkg/model/history"
+	"cv-landing-cli/pkg/model/shell"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,55 +11,64 @@ import (
 
 type MenuEntry struct {
 	Name     string
-	NewModel func() tea.Model
+	NewModel func() shell.ShellContent
 }
 
 type ActionModel struct {
 	entries []MenuEntry
 	cursor  int
+	title   string
+	tips    string
+	width   int
+	height  int
 }
 
-func NewModel() ActionModel {
+func NewModel(title string, tips string) *ActionModel {
 	model := ActionModel{
 		cursor: 0,
+		title:  title,
+		tips:   tips,
 	}
 	model.entries = []MenuEntry{
 		{
 			Name: "Add items",
-			NewModel: func() tea.Model {
-				addItemsModel := form.NewModel([]form.FormField{
-					form.NewTextField(1),
-					form.NewTextField(1),
-					form.NewTextField(3),
-					form.NewSelectField([]string{"project", "education", "event"}, 0),
-					form.NewTextField(1),
-					form.NewDateField(),
-					form.NewDateField(),
-				}, []string{
-					"Name",
-					"Subtitle",
-					"Description",
-					"Type",
-					"Meta label",
-					"Start date",
-					"End date",
-				}, &model)
-				addItemsModel.Fields[0].SetFocus(true)
-				return addItemsModel
+			NewModel: func() shell.ShellContent {
+				addItemsModel :=
+					form.NewModel([]form.FormField{
+						form.NewTextField(1),
+						form.NewTextField(1),
+						form.NewTextField(3),
+						form.NewSelectField([]string{"project", "education", "event"}, 0),
+						form.NewTextField(1),
+						form.NewDateField(),
+						form.NewDateField(),
+					}, []string{
+						"Name",
+						"Subtitle",
+						"Description",
+						"Type",
+						"Meta label",
+						"Start date",
+						"End date",
+					}, "Add activity", "asd")
+				addItemsModel.SetWidth(model.width)
+				addItemsModel.SetHeight(model.height)
+				history := history.New()
+				return history.Push(&addItemsModel)
 			},
 		},
 		{
 			Name: "Remove items",
 		},
 	}
-	return model
+	return &model
 }
 
 func (m ActionModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ActionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ActionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -83,7 +94,6 @@ func (m ActionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m ActionModel) View() string {
 	var sb strings.Builder
-	sb.WriteString("Please choose an action you'd like to perform:\n\n")
 	for i, entry := range m.entries {
 		if i == m.cursor {
 			sb.WriteString("> ")
@@ -93,6 +103,21 @@ func (m ActionModel) View() string {
 		sb.WriteString(entry.Name)
 		sb.WriteString("\n")
 	}
-	sb.WriteString("\nPress 'q' to quit")
 	return sb.String()
+}
+
+func (m *ActionModel) SetHeight(value int) {
+	m.height = value
+}
+
+func (m *ActionModel) SetWidth(value int) {
+	m.width = value
+}
+
+func (m ActionModel) GetTitle() string {
+	return m.title
+}
+
+func (m ActionModel) GetTips() string {
+	return m.tips
 }

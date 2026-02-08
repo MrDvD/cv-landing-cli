@@ -9,6 +9,8 @@ import (
 	"cv-landing-cli/pkg/client"
 	"cv-landing-cli/pkg/config"
 	"cv-landing-cli/pkg/model/action"
+	"cv-landing-cli/pkg/model/history"
+	"cv-landing-cli/pkg/model/shell"
 	"net/http"
 	"os"
 
@@ -47,7 +49,10 @@ func Execute() {
 	rootCmd, interactive := fillModes(rootCmd)
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if *interactive {
-			p := tea.NewProgram(action.NewModel())
+			action := action.NewModel("Action menu", "press q to quit")
+			history := history.New()
+			shell := shell.NewShell(history.Push(action))
+			p := tea.NewProgram(shell)
 			_, err := p.Run()
 			return err
 		} else {

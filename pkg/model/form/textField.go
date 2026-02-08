@@ -18,8 +18,6 @@ func NewTextField(height int) *TextField {
 	return &TextField{
 		value:   new(string),
 		height:  height,
-		width:   0,
-		column:  0,
 		focused: false,
 	}
 }
