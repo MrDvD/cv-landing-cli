@@ -25,29 +25,30 @@ type FormField interface {
 }
 
 type FormModel struct {
-	fields []FormField
-	labels []string
-	cursor int
-	width  int
-	height int
-	title  string
-	tips   string
+	fields           []FormField
+	labels           []string
+	activePageFields []int
+	cursor           int
+	width            int
+	height           int
+	title            string
+	tips             string
 }
 
-func NewModel(fields []FormField, labels []string, title string, tips string) FormModel {
-	if len(fields) > 0 {
-		fields[0].SetFocus(true)
-	}
+func NewModel(fields []FormField, labels []string, title string) FormModel {
 	return FormModel{
 		fields: fields,
 		labels: labels,
 		cursor: 0,
 		title:  title,
-		tips:   tips,
 	}
 }
 
-func (m FormModel) Init() tea.Cmd {
+func (m *FormModel) Init() tea.Cmd {
+	if len(m.fields) > 0 {
+		m.fields[0].SetFocus(true)
+	}
+	m.recalculateActivePages()
 	return nil
 }
 
@@ -74,26 +75,14 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if assertedModel, ok := updatedModel.(FormField); ok {
 		m.fields[m.cursor] = assertedModel
 	}
-
+	m.recalculateActivePages()
 	return m, cmd
 }
 
 func (m FormModel) View() string {
-	availableHeight := m.height - 2
-	pages := m.calculatePages(availableHeight)
-
-	activePageIndex := 0
-	for i, page := range pages {
-		if slices.Contains(page, m.cursor) {
-			activePageIndex = i
-		}
-	}
-
 	var sb strings.Builder
-	activePageFields := pages[activePageIndex]
 	maxLabelLen := m.getMaxLabelLen()
-
-	for _, idx := range activePageFields {
+	for _, idx := range m.activePageFields {
 		field := m.fields[idx]
 		label := m.labels[idx]
 		if adaptiveField, ok := field.(AdaptiveWidthField); ok {
@@ -115,11 +104,20 @@ func (m FormModel) View() string {
 		}
 		sb.WriteString("\n")
 	}
-
-	footer := fmt.Sprintf("\n[ Page %d/%d | Use Up/Down to navigate ]", activePageIndex+1, len(pages))
-	sb.WriteString(footer)
-
 	return sb.String()
+}
+
+func (m *FormModel) recalculateActivePages() {
+	pages := m.calculatePages(m.height - 1)
+
+	activePageIndex := 0
+	for i, page := range pages {
+		if slices.Contains(page, m.cursor) {
+			activePageIndex = i
+		}
+	}
+	m.activePageFields = pages[activePageIndex]
+	m.tips = fmt.Sprintf("[ Page %d/%d | Use Up/Down to navigate ]", activePageIndex+1, len(pages))
 }
 
 func (m FormModel) calculatePages(availableHeight int) [][]int {

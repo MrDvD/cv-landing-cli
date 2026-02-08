@@ -50,9 +50,10 @@ func NewModel(title string, tips string) *ActionModel {
 						"Meta label",
 						"Start date",
 						"End date",
-					}, "Add activity", "asd")
+					}, "Add activity")
 				addItemsModel.SetWidth(model.width)
 				addItemsModel.SetHeight(model.height)
+				addItemsModel.Init()
 				history := history.New()
 				return history.Push(&addItemsModel)
 			},
