@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var tableConfig = view.TableConfig[activity.Activity]{
+var activityTableConfig = view.TableConfig[activity.Activity]{
 	Columns: []view.Column{
 		{Header: "ID", Weight: 1},
 		{Header: "NAME", Weight: 3},
@@ -23,11 +23,11 @@ var tableConfig = view.TableConfig[activity.Activity]{
 		return []string{
 			fmt.Sprintf("%d", a.Id),
 			a.Name,
-			view.StrPtr(a.Subtitle),
+			view.ShowPtr(a.Subtitle),
 			a.Description,
-			view.StrPtr(a.MetaLabel),
+			view.ShowPtr(a.MetaLabel),
 			formatDate(a.DateStart),
-			formatDate(view.StrPtr(a.DateEnd)),
+			formatDate(view.ShowPtr(a.DateEnd)),
 		}
 	},
 }
@@ -57,7 +57,7 @@ func ActivityCmd(repo activity.ActivityRepository) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		view.Table(activities, tableConfig)
+		view.Table(activities, activityTableConfig)
 		return nil
 	}
 	return &cmd

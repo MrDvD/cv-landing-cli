@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	"golang.org/x/term"
@@ -79,9 +80,17 @@ func truncate(s string, limit int) string {
 	return string(runes[:limit-3]) + "..."
 }
 
-func StrPtr(s *string) string {
-	if s == nil {
+func ShowPtr(s any) string {
+	val := reflect.ValueOf(s)
+	if val.IsNil() {
 		return "-"
 	}
-	return *s
+	if val.Kind() == reflect.Pointer {
+		val = val.Elem()
+	}
+	s = val.Interface()
+	if str, ok := s.(fmt.Stringer); ok {
+		return str.String()
+	}
+	return fmt.Sprintf("%v", s)
 }

@@ -4,7 +4,7 @@ type Attachment struct {
 	Id         int
 	Name       string
 	Link       string
-	Priority   int
+	Priority   *int
 	ActivityId int
 }
 

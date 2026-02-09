@@ -6,11 +6,13 @@ import (
 	"cv-landing-cli/cmd/remove"
 	"cv-landing-cli/cmd/show"
 	"cv-landing-cli/pkg/activity"
+	"cv-landing-cli/pkg/attachments"
 	"cv-landing-cli/pkg/client"
 	"cv-landing-cli/pkg/config"
 	"cv-landing-cli/pkg/model/action"
 	"cv-landing-cli/pkg/model/history"
 	"cv-landing-cli/pkg/model/shell"
+	"cv-landing-cli/pkg/tags"
 	"net/http"
 	"os"
 
@@ -27,11 +29,18 @@ CV Admin allows you to manage your professional identity directly
 from the terminal, providing interactive forms for data entry and 
 automated formatting for your deployment-ready CV.`,
 }
+var baseClient = client.BaseClient{
+	HTTPClient: http.DefaultClient,
+	Endpoints:  config.MustGetAppConfig().Hosts,
+}
 var activityClient = activity.ActivityClient{
-	Base: &client.BaseClient{
-		HTTPClient: http.DefaultClient,
-		Endpoints:  config.MustGetAppConfig().Hosts,
-	},
+	Base: &baseClient,
+}
+var attachmentClient = attachments.AttachmentClient{
+	Base: &baseClient,
+}
+var tagsClient = tags.TagsClient{
+	Base: &baseClient,
 }
 
 func fillModes(cmd cobra.Command) (cobra.Command, *bool) {
@@ -43,7 +52,7 @@ func fillModes(cmd cobra.Command) (cobra.Command, *bool) {
 func Execute() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(add.InitCmd(&activityClient))
-	rootCmd.AddCommand(show.InitCmd(&activityClient))
+	rootCmd.AddCommand(show.InitCmd(&activityClient, &attachmentClient, &tagsClient))
 	rootCmd.AddCommand(remove.InitCmd(&activityClient))
 	rootCmd.AddCommand(edit.InitCmd(&activityClient))
 	rootCmd, interactive := fillModes(rootCmd)

@@ -62,10 +62,12 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyUp:
 			if m.cursor > 0 {
 				m.cursor--
+				m.recalculateActivePages()
 			}
 		case tea.KeyDown:
 			if m.cursor < len(m.fields)-1 {
 				m.cursor++
+				m.recalculateActivePages()
 			}
 		}
 		m.fields[m.cursor].SetFocus(true)
@@ -75,7 +77,6 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if assertedModel, ok := updatedModel.(FormField); ok {
 		m.fields[m.cursor] = assertedModel
 	}
-	m.recalculateActivePages()
 	return m, cmd
 }
 
